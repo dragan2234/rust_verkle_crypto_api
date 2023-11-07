@@ -1,6 +1,3 @@
-use bandersnatch::fr;
-use verkle_spec::*;
-use verkle_trie::*;
 use ipa_multipoint::{*, multiproof::MultiPoint, lagrange_basis::LagrangeBasis};
 use std::*;
 use ark_ff::fields::PrimeField;
@@ -12,6 +9,8 @@ use ipa_multipoint::transcript::Transcript;
 use std::time::{Instant, Duration};
 use ipa_multipoint::multiproof::ProverQuery;
 use ipa_multipoint::multiproof::VerifierQuery;
+use banderwagon::Fr;
+use banderwagon::Element;
 
 const PEDERSEN_SEED: &[u8] = b"eth_verkle_oct_2021";
 
@@ -25,10 +24,20 @@ fn exposed_pedersen_hash(input: [u8;64]) -> [u8;32] {
     trie_index.copy_from_slice(&input[32..64]);
     trie_index.reverse(); // reverse for little endian per specs
 
-    let base_hash = hash_addr_int(&address32, &trie_index);
 
-    let result = base_hash.as_fixed_bytes();
-    *result
+    let mut scalars: Vec<Fr> = Vec::new();
+
+    scalars.push(Fr::from(16386));
+    scalars.push(Fr::from_le_bytes_mod_order(&address32[0..16]));
+    scalars.push(Fr::from_le_bytes_mod_order(&address32[16..32]));
+    scalars.push(Fr::from_le_bytes_mod_order(&trie_index[0..16]));
+    scalars.push(Fr::from_le_bytes_mod_order(&trie_index[16..32]));
+    let bases = CRS::new(5, PEDERSEN_SEED);
+    let commit = multi_scalar_mul(&bases.G, &scalars);
+    let mut result = commit.to_bytes();
+
+    result.reverse();
+    result
 }
 
 fn exposed_pedersen_commit_to_fr(input: Vec<u8>) -> [u8;32] {
@@ -70,7 +79,7 @@ fn exposed_pedersen_commit_to_element(input: Vec<u8>) -> [u8;32] {
 
         let len = input.len();
         if len % 32 != 0 {
-            panic!("Invalid input length. Should be a multiple of 32-bytes."); // Return null pointer to indicate an error
+            panic!("Invalid input length. Should be a multiple of 32-bytes.");
         }    
         let n_scalars = len / 32;
         if n_scalars > 256 {
@@ -195,23 +204,6 @@ fn exposed_verify_call(input: Vec<u8>) -> bool {
     true
 }
 
-
-
-// Helper function to hash an address and an integer taken from rust-verkle/verkle-specs.
-pub(crate) fn hash_addr_int(addr: &[u8; 32], integer: &[u8; 32]) -> H256 {
-
-    let address_bytes = addr;
-
-    let integer_bytes = integer;
-    let mut hash_input = [0u8; 64];
-    let (first_half, second_half) = hash_input.split_at_mut(32);
-
-    // Copy address and index into slice, then hash it
-    first_half.copy_from_slice(address_bytes);
-    second_half.copy_from_slice(integer_bytes);
-
-    hash64(hash_input)
-}
 
 // Helper for group_to_field
 pub(crate)fn group_to_field(point: &Element) -> Fr {
