@@ -11,6 +11,7 @@ use ipa_multipoint::lagrange_basis::PrecomputedWeights;
 use ipa_multipoint::transcript::Transcript;
 use std::time::{Instant, Duration};
 use ipa_multipoint::multiproof::ProverQuery;
+use ipa_multipoint::multiproof::VerifierQuery;
 
 const PEDERSEN_SEED: &[u8] = b"eth_verkle_oct_2021";
 
@@ -163,6 +164,38 @@ fn exposed_prove_call(input: Vec<u8>) -> Vec<u8> {
 }
 
 
+fn exposed_verify_call(input: Vec<u8>) -> bool {
+    // Define the chunk size 32+1+32 = 65 bytes for C_i, z_i, y_i
+    let chunk_size = 65;
+    // Create an iterator over the input Vec<u8>
+    let chunked_data = input.chunks(chunk_size);
+
+
+    let mut verifier_queries: Vec<VerifierQuery> = Vec::new();
+
+    for (i, chunk) in chunked_data.enumerate() {
+        let C_i = Element::from_bytes(&chunk[0..32]).unwrap();
+
+
+        let z_i: Fr = Fr::from(chunk[32] as u128);
+
+        let y_i = Fr::from_be_bytes_mod_order(&chunk[33..65]);
+
+        let verifier_query = VerifierQuery {
+            commitment: C_i,
+            point: z_i,
+            result: y_i,
+        };
+
+        verifier_queries.push(verifier_query);
+    }
+
+    // TODO: make verifier struct, expose multiproof.check call
+
+    true
+}
+
+
 
 // Helper function to hash an address and an integer taken from rust-verkle/verkle-specs.
 pub(crate) fn hash_addr_int(addr: &[u8; 32], integer: &[u8; 32]) -> H256 {
@@ -180,8 +213,7 @@ pub(crate) fn hash_addr_int(addr: &[u8; 32], integer: &[u8; 32]) -> H256 {
     hash64(hash_input)
 }
 
-// Note: This is a 2 to 1 map, but the two preimages are identified to be the same
-// TODO: Create a document showing that this poses no problems
+// Helper for group_to_field
 pub(crate)fn group_to_field(point: &Element) -> Fr {
     let base_field = point.map_to_field();
     let mut bytes = [0u8; 32];
