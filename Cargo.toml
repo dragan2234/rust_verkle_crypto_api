@@ -10,10 +10,7 @@ edition = "2021"
 [dependencies]
 ipa-multipoint = { git = "https://github.com/crate-crypto/ipa_multipoint", branch = "banderwagon_migration" }
 banderwagon = { git = "https://github.com/crate-crypto/banderwagon" }
-bandersnatch = "0.1.1"
 ark-ff = { version = "^0.3.0", default-features = false }
-ark-ec = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false }
-ark-std = { version = "^0.3.0", default-features = false }
 hex = "0.4.3"
 num-bigint = "0.4.4"

@@ -63,7 +63,7 @@ fn exposed_pedersen_commit_to_fr(input: Vec<u8>) -> [u8;32] {
         if n_scalars > 256 {
             panic!("Invalid input length. Should be at most 256 elements of 32-bytes.");
         }    
-    
+
         // Each 32-be-bytes are interpreted as field elements.
         let mut scalars: Vec<Fr> = Vec::with_capacity(n_scalars);
         for b in inp.chunks(32) {
@@ -139,12 +139,11 @@ fn exposed_prove_call(input: Vec<u8>) -> Vec<u8> {
     let mut prover_queries: Vec<ProverQuery> = Vec::new();
 
 
-
     for (i, chunk) in chunked_data.enumerate() {
         if chunk.len() >= chunk_size {
             let data = chunk.clone();
             let commitment = Element::from_bytes(&data[0..32]).unwrap();
-    
+
             // Create f_x from the next 8192 bytes
             let f_i_x: Vec<u8> = chunk[32..8224].to_vec();
 
