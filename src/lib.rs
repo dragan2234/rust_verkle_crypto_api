@@ -14,6 +14,15 @@ use banderwagon::Element;
 
 const PEDERSEN_SEED: &[u8] = b"eth_verkle_oct_2021";
 
+/// Pedersen hash receives an address and a trie index and returns a hash calculated this way:
+/// H(constant || address_low || address_high || trie_index_low || trie_index_high)
+/// where constant = 2 + 256*64
+/// address_low = lower 16 bytes of the address
+/// address_high = higher 16 bytes of the address
+/// trie_index_low = lower 16 bytes of the trie index
+/// trie_index_high = higher 16 bytes of the trie index
+/// The result is a 256 bit hash
+/// Specs: https://notes.ethereum.org/@vbuterin/verkle_tree_eip
 fn exposed_pedersen_hash(input: [u8;64]) -> [u8;32] {
     let mut address32 = [0u8; 32];
 
@@ -26,20 +35,21 @@ fn exposed_pedersen_hash(input: [u8;64]) -> [u8;32] {
 
 
     let mut scalars: Vec<Fr> = Vec::new();
-
     scalars.push(Fr::from(16386));
     scalars.push(Fr::from_le_bytes_mod_order(&address32[0..16]));
     scalars.push(Fr::from_le_bytes_mod_order(&address32[16..32]));
     scalars.push(Fr::from_le_bytes_mod_order(&trie_index[0..16]));
     scalars.push(Fr::from_le_bytes_mod_order(&trie_index[16..32]));
+
     let bases = CRS::new(5, PEDERSEN_SEED);
     let commit = multi_scalar_mul(&bases.G, &scalars);
     let mut result = commit.to_bytes();
-
     result.reverse();
     result
 }
 
+/// Expects up to 256 32-be-bytes Banderwagon elements - simply numbers in the field.
+/// Returns group_to_field(commitment) - a Fr element serialized to 32-be-bytes.
 fn exposed_pedersen_commit_to_fr(input: Vec<u8>) -> [u8;32] {
         // Input should be a multiple of 32-be-bytes.
         let inp = input.as_slice();
@@ -72,7 +82,7 @@ fn exposed_pedersen_commit_to_fr(input: Vec<u8>) -> [u8;32] {
         scalar_bytes
 }
 
-
+/// Similar to exposed_pedersen_commit_to_fr, but returns just a commitment seriazlied as bytes.
 fn exposed_pedersen_commit_to_element(input: Vec<u8>) -> [u8;32] {
         // Input should be a multiple of 32-be-bytes.
         let inp = input.as_slice();
@@ -99,6 +109,7 @@ fn exposed_pedersen_commit_to_element(input: Vec<u8>) -> [u8;32] {
         commit_bytes
 }
 
+/// In case we need to expose the group_to_field function.
 fn exposed_group_to_field(input: [u8;32]) -> [u8;32] {
     let mut bytes = [0u8; 32];
     let point = Element::from_bytes(&input).unwrap();
@@ -109,6 +120,12 @@ fn exposed_group_to_field(input: [u8;32]) -> [u8;32] {
     bytes
 }
 
+/// Receives a tuple (C_i, f_i(X), z_i, y_i)
+/// Where C_i is a commitment to f_i(X) serialized as 32 bytes
+/// f_i(X) is the polynomial serialized as 8192 bytes since we have 256 Fr elements each serialized as 32 bytes
+/// z_i is index of the point in the polynomial: 1 byte (number from 1 to 256)
+/// y_i is the evaluation of the polynomial at z_i i.e value we are opening: 32 bytes
+/// Returns a proof serialized as bytes
 fn exposed_prove_call(input: Vec<u8>) -> Vec<u8> {
     // Define the chunk size (8257 bytes)
     // C_i, f_i(X), z_i, y_i
