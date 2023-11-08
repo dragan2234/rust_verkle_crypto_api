@@ -11,6 +11,7 @@ use ipa_multipoint::multiproof::ProverQuery;
 use ipa_multipoint::multiproof::VerifierQuery;
 use banderwagon::Fr;
 use banderwagon::Element;
+use ipa_multipoint::multiproof::MultiPointProof;
 
 const PEDERSEN_SEED: &[u8] = b"eth_verkle_oct_2021";
 
@@ -216,9 +217,20 @@ fn exposed_verify_call(input: Vec<u8>) -> bool {
         verifier_queries.push(verifier_query);
     }
 
-    // TODO: make verifier struct, expose multiproof.check call
+    let precomp = PrecomputedWeights::new(256);
 
-    true
+
+    let crs = CRS::new(256, PEDERSEN_SEED);
+    let mut transcript = Transcript::new(b"verkle");
+
+
+    //TODO: process proof bytes
+    let proof_bytes = [0u8; 256];
+
+    let mut proof = MultiPointProof::from_bytes(&proof_bytes, 256).unwrap();
+
+    let result = proof.check(&crs, &precomp, &verifier_queries,&mut transcript);
+    result
 }
 
 
