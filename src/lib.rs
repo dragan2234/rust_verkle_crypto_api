@@ -81,6 +81,29 @@ fn exposed_pedersen_commit_to_fr(input: Vec<u8>) -> [u8;32] {
         scalar_bytes
 }
 
+fn exposed_update_commitment(input: [u8; 65]) -> [u8; 32]{
+    let mut commitment = [0u8; 32];
+    commitment.copy_from_slice(&input[0..32]);
+
+    let mut new_value_minus_old = [0u8; 32];
+    new_value_minus_old.copy_from_slice(&input[32..64]);
+
+    let mut index = 0u8;
+    index.copy_from_slice(&input[64..65]).unwrap();
+    let index_s = index[0];
+
+    let mut scalars: Vec<Fr> = Vec::new();
+    scalars.push(Fr::from_le_bytes_mod_order(&commitment));
+    scalars.push(Fr::from_le_bytes_mod_order(&new_value_minus_old));
+    scalars.push(Fr::from_le_bytes_mod_order(&index_s));
+
+    let bases = CRS::new(3, PEDERSEN_SEED);
+    let commit = multi_scalar_mul(&bases.G, &scalars);
+    let mut result = commit.to_bytes();
+    result.reverse();
+    result
+}
+
 /// Similar to exposed_pedersen_commit_to_fr, but returns just a commitment seriazlied as bytes.
 fn exposed_pedersen_commit_to_element(input: Vec<u8>) -> [u8;32] {
         // Input should be a multiple of 32-be-bytes.
