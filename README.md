@@ -15,6 +15,8 @@ Exposes 4 methods enough for computing root_hash of the trie and tested against 
 Exposes 2 more methods for generating the proof and verifying:
 - exposed_prove_call
 - exposed_verify_call
+
+And 1 method for updating the commitment
 - exposed_update_commitment
   
 These are still in progress
