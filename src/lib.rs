@@ -92,14 +92,15 @@ fn exposed_update_commitment(input: [u8; 65]) -> [u8; 32]{
     index.copy_from_slice(&input[64..65]).unwrap();
     let index_s = index[0];
 
-    let mut scalars: Vec<Fr> = Vec::new();
-    scalars.push(Fr::from_le_bytes_mod_order(&commitment));
-    scalars.push(Fr::from_le_bytes_mod_order(&new_value_minus_old));
-    scalars.push(Fr::from_le_bytes_mod_order(&index_s));
+    let mut new_minus_old_ser = Fr::from_be_bytes_mod_order(&new_value_minus_old);
+    let bases = CRS::new(256, PEDERSEN_SEED);
 
-    let bases = CRS::new(3, PEDERSEN_SEED);
-    let commit = multi_scalar_mul(&bases.G, &scalars);
-    let mut result = commit.to_bytes();
+    let mut commitment_ser = Element::new();
+    commitment_ser.push(Element::from_bytes(&commitment));
+
+    let mut new_commitment = commitment_ser + new_value_minus_old*bases[index_s];
+
+    let mut result = new_commitment.to_bytes();
     result.reverse();
     result
 }
