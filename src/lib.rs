@@ -102,7 +102,7 @@ fn exposed_update_commitment(input: [u8; 65]) -> [u8; 32] {
 
     let commitment = Element::from_bytes(&commitment_bytes).unwrap();
 
-    // Calculate new index
+    // Calculate new commitment
     let new_commitment = commitment + bases.G[index] * new_minus_old_ser;
 
     let result = new_commitment.to_bytes();
