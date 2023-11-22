@@ -81,29 +81,29 @@ fn exposed_pedersen_commit_to_fr(input: Vec<u8>) -> [u8;32] {
         scalar_bytes
 }
 
-fn exposed_update_commitment(input: [u8; 65]) -> [u8; 32]{
-    let mut commitment = [0u8; 32];
-    commitment.copy_from_slice(&input[0..32]);
+// fn exposed_update_commitment(input: [u8; 65]) -> [u8; 32]{
+//     let mut commitment = [0u8; 32];
+//     commitment.copy_from_slice(&input[0..32]);
 
-    let mut new_value_minus_old = [0u8; 32];
-    new_value_minus_old.copy_from_slice(&input[32..64]);
+//     let mut new_value_minus_old = [0u8; 32];
+//     new_value_minus_old.copy_from_slice(&input[32..64]);
 
-    let mut index = 0u8;
-    index.copy_from_slice(&input[64..65]).unwrap();
-    let index_s = index[0];
+//     let mut index = [0u8; 1 ];
+//     index.copy_from_slice(&input[64..65]).unwrap();
+//     let index_s = index[0];
 
-    let mut new_minus_old_ser = Fr::from_be_bytes_mod_order(&new_value_minus_old);
-    let bases = CRS::new(256, PEDERSEN_SEED);
+//     let mut new_minus_old_ser = Fr::from_be_bytes_mod_order(&new_value_minus_old);
+//     let bases = CRS::new(256, PEDERSEN_SEED);
 
-    let mut commitment_ser = Element::new();
-    commitment_ser.push(Element::from_bytes(&commitment));
+//     let mut commitment_ser = Element::new();
+//     commitment_ser.push(Element::from_bytes(&commitment));
 
-    let mut new_commitment = commitment_ser + new_value_minus_old*bases[index_s];
+//     let mut new_commitment = commitment_ser + new_value_minus_old*bases[index_s];
 
-    let mut result = new_commitment.to_bytes();
-    result.reverse();
-    result
-}
+//     let mut result = new_commitment.to_bytes();
+//     result.reverse();
+//     result
+// }
 
 /// Similar to exposed_pedersen_commit_to_fr, but returns just a commitment seriazlied as bytes.
 fn exposed_pedersen_commit_to_element(input: Vec<u8>) -> [u8;32] {
