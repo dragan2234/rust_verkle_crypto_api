@@ -81,28 +81,6 @@ fn exposed_pedersen_commit_to_fr(input: Vec<u8>) -> [u8;32] {
         scalar_bytes
 }
 
-fn exposed_update_one_commitment(input: [u8; 65]) -> [u8; 32] {
-
-    let mut commitment_bytes = [0u8; 32];
-    commitment_bytes.copy_from_slice(&input[0..32]);
-
-    let mut new_value_minus_old = [0u8; 32];
-    new_value_minus_old.copy_from_slice(&input[32..64]);
-
-    let index = input[64] as usize;
-
-    let new_minus_old_ser = Fr::from_be_bytes_mod_order(&new_value_minus_old);
-
-    let bases = CRS::new(256, PEDERSEN_SEED);
-
-    let commitment = Element::from_bytes(&commitment_bytes).unwrap();
-
-    let new_commitment = commitment + bases.G[index] * new_minus_old_ser;
-
-    let mut result = new_commitment.to_bytes();
-    result.reverse();
-    result
-}
 
 /// Expects 32 bytes for the serialized commitment, 32 bytes for the diff between new and old value and 1 byte for the index of the value.
 fn exposed_update_commitment(input: [u8; 65]) -> [u8; 32] {
