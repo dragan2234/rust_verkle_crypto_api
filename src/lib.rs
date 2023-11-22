@@ -10,6 +10,7 @@ use ipa_multipoint::multiproof::VerifierQuery;
 use banderwagon::Fr;
 use banderwagon::Element;
 use ipa_multipoint::multiproof::MultiPointProof;
+use std::ops::Mul;
 
 const PEDERSEN_SEED: &[u8] = b"eth_verkle_oct_2021";
 
@@ -81,29 +82,37 @@ fn exposed_pedersen_commit_to_fr(input: Vec<u8>) -> [u8;32] {
         scalar_bytes
 }
 
-// fn exposed_update_commitment(input: [u8; 65]) -> [u8; 32]{
-//     let mut commitment = [0u8; 32];
-//     commitment.copy_from_slice(&input[0..32]);
 
-//     let mut new_value_minus_old = [0u8; 32];
-//     new_value_minus_old.copy_from_slice(&input[32..64]);
+fn add_optional_elem(opt_elem: Option<Element>, elem : Element) -> Element{
+    match opt_elem {
+        Some(inner_elem) => inner_elem + elem, // Use the implemented Add for Element
+        None => elem, // If None, return the other element as it is
+    }
+}
 
-//     let mut index = [0u8; 1 ];
-//     index.copy_from_slice(&input[64..65]).unwrap();
-//     let index_s = index[0];
+fn exposed_update_commitment(input: [u8; 65]) -> [u8; 32]{
+    let mut commitment = [0u8; 32];
+    commitment.copy_from_slice(&input[0..32]);
 
-//     let mut new_minus_old_ser = Fr::from_be_bytes_mod_order(&new_value_minus_old);
-//     let bases = CRS::new(256, PEDERSEN_SEED);
+    let mut new_value_minus_old = [0u8; 32];
+    new_value_minus_old.copy_from_slice(&input[32..64]);
 
-//     let mut commitment_ser = Element::new();
-//     commitment_ser.push(Element::from_bytes(&commitment));
+    let mut index = [0u8; 1 ];
+    index.copy_from_slice(&input[64..65]);
+    let index_s = index[0] as usize;
 
-//     let mut new_commitment = commitment_ser + new_value_minus_old*bases[index_s];
+    let  new_minus_old_ser = Fr::from_be_bytes_mod_order(&new_value_minus_old);
+    let bases = CRS::new(256, PEDERSEN_SEED);
 
-//     let mut result = new_commitment.to_bytes();
-//     result.reverse();
-//     result
-// }
+    let  commitment_ser = Element::from_bytes(&commitment);
+
+    let new_commitment = add_optional_elem(commitment_ser,(bases[index_s] * new_minus_old_ser));
+
+    let mut result = new_commitment.to_bytes();
+    result.reverse();
+    result
+}
+
 
 /// Similar to exposed_pedersen_commit_to_fr, but returns just a commitment seriazlied as bytes.
 fn exposed_pedersen_commit_to_element(input: Vec<u8>) -> [u8;32] {
